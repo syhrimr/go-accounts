@@ -6,24 +6,19 @@ import (
 	"log"
 	"math/rand"
 	"net/http"
-	"strconv"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/go-redis/redis/v8"
 	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq"
-	"github.com/lolmourne/go-groupchat/resource/acc"
-	"github.com/lolmourne/go-groupchat/resource/groupchat"
-	groupchat2 "github.com/lolmourne/go-groupchat/usecase/groupchat"
-	"github.com/lolmourne/go-groupchat/usecase/userauth"
+	"github.com/lolmourne/go-accounts/resource/acc"
+	"github.com/lolmourne/go-accounts/usecase/userauth"
 )
 
 var db *sqlx.DB
 var dbResource acc.DBItf
-var dbRoomResource groupchat.DBItf
 var userAuthUsecase userauth.UsecaseItf
-var groupChatUsecase groupchat2.UsecaseItf
 
 func main() {
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
@@ -41,14 +36,10 @@ func main() {
 	dbRsc := acc.NewDBResource(dbInit)
 	dbRsc = acc.NewRedisResource(rdb, dbRsc)
 
-	dbRoomRsc := groupchat.NewRedisResource(rdb, groupchat.NewDBResource(dbInit))
-
 	dbResource = dbRsc
-	dbRoomResource = dbRoomRsc
 	db = dbInit
 
 	userAuthUsecase = userauth.NewUsecase(dbRsc, "signedK3y")
-	groupChatUsecase = groupchat2.NewUseCase(dbRoomRsc, "signedK3y")
 
 	corsOpts := cors.Config{
 		AllowAllOrigins:  true,
@@ -65,12 +56,9 @@ func main() {
 	r.GET("/profile/:username", getProfile)
 	r.PUT("/profile", validateSession(updateProfile))
 	r.PUT("/password", validateSession(changePassword))
+	r.GET("/user/info", validateSession(getUserInfo))
 
-	// untuk PR
-	r.PUT("/groupchat", validateSession(joinRoom))
-	r.POST("/groupchat", validateSession(createRoom))
-	r.GET("/joined", validateSession(getJoinedRoom))
-	r.Run()
+	r.Run(":7070")
 }
 
 func validateSession(handlerFunc gin.HandlerFunc) gin.HandlerFunc {
@@ -79,8 +67,7 @@ func validateSession(handlerFunc gin.HandlerFunc) gin.HandlerFunc {
 
 		if len(accessToken) < 1 {
 			c.JSON(403, StandardAPIResponse{
-				Err:     "No access token provided",
-				Message: "Forbidden",
+				Err: "No access token provided",
 			})
 			return
 		}
@@ -88,13 +75,36 @@ func validateSession(handlerFunc gin.HandlerFunc) gin.HandlerFunc {
 		userID, err := userAuthUsecase.ValidateSession(accessToken[0])
 		if err != nil {
 			c.JSON(400, StandardAPIResponse{
-				Err: err.Error(),
+				Err: "Cannot validate session",
 			})
 			return
 		}
 		c.Set("uid", userID)
 		handlerFunc(c)
 	}
+}
+
+func getUserInfo(c *gin.Context) {
+	userID := c.GetInt64("uid")
+	if userID < 1 {
+		c.JSON(401, StandardAPIResponse{
+			Err: "Unauthorized",
+		})
+		return
+	}
+
+	user, err := dbResource.GetUserByUserID(userID)
+	if err != nil {
+		c.JSON(500, StandardAPIResponse{
+			Err: "Internal Server Error",
+		})
+		return
+	}
+
+	c.JSON(200, StandardAPIResponse{
+		Err:  "",
+		Data: user,
+	})
 }
 
 func register(c *gin.Context) {
@@ -136,11 +146,11 @@ func login(c *gin.Context) {
 }
 
 func getUser(c *gin.Context) {
-	uid := c.Param("user_id")
-
-	userID, err := strconv.ParseInt(uid, 10, 64)
-	if err != nil {
-		log.Println(err)
+	userID := c.GetInt64("uid")
+	if userID < 1 {
+		c.JSON(401, StandardAPIResponse{
+			Err: "Unauthorized",
+		})
 		return
 	}
 
@@ -268,81 +278,6 @@ func changePassword(c *gin.Context) {
 		Message: "Success update password",
 	})
 
-}
-
-func createRoom(c *gin.Context) {
-	name := c.Request.FormValue("name")
-	desc := c.Request.FormValue("desc")
-	categoryId := c.Request.FormValue("category_id")
-	adminId := c.GetInt64("uid") //by default the one who create will be group admin
-
-	adminStr := strconv.FormatInt(adminId, 10)
-
-	_, err := groupChatUsecase.CreateGroupchat(name, adminStr, desc, categoryId)
-
-	if err != nil {
-		c.JSON(400, StandardAPIResponse{
-			Err: err.Error(),
-		})
-		return
-	}
-
-	c.JSON(201, StandardAPIResponse{
-		Err:     "null",
-		Message: "Success create new groupchat",
-	})
-}
-
-func joinRoom(c *gin.Context) {
-	userID := c.GetInt64("uid")
-	if userID < 1 {
-		c.JSON(400, StandardAPIResponse{
-			Err: "user not found",
-		})
-		return
-	}
-
-	reqRoomID := c.Request.FormValue("room_id")
-	roomID, err := strconv.ParseInt(reqRoomID, 10, 64)
-	if err != nil {
-		c.JSON(400, StandardAPIResponse{
-			Err: "wrong room id",
-		})
-		return
-	}
-
-	err = groupChatUsecase.JoinRoom(roomID, userID)
-
-	if err != nil {
-		c.JSON(400, StandardAPIResponse{
-			Err: err.Error(),
-		})
-		return
-	}
-
-	c.JSON(201, StandardAPIResponse{
-		Err:     "null",
-		Message: "Success join to group chat with ID " + reqRoomID,
-	})
-}
-
-func getJoinedRoom(c *gin.Context) {
-	userID := c.GetInt64("uid")
-	log.Println(userID)
-	rooms, err := dbRoomResource.GetJoinedRoom(userID)
-	log.Println(rooms)
-
-	if err != nil {
-		c.JSON(400, StandardAPIResponse{
-			Err: "Unauthorized",
-		})
-		return
-	}
-
-	c.JSON(200, StandardAPIResponse{
-		Err:  "null",
-		Data: rooms,
-	})
 }
 
 const letterBytes = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"

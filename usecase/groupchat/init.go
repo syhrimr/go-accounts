@@ -1,12 +1,12 @@
 package groupchat
 
 import (
-	"github.com/lolmourne/go-groupchat/model"
-	"github.com/lolmourne/go-groupchat/resource/groupchat"
+	"github.com/lolmourne/go-accounts/model"
+	"github.com/lolmourne/go-accounts/resource/groupchat"
 )
 
 type UseCase struct {
-	dbRoomRsc groupchat.DBItf
+	dbRoomRsc  groupchat.DBItf
 	signingKey []byte
 }
 
@@ -18,7 +18,7 @@ type UsecaseItf interface {
 
 func NewUseCase(dbRsc groupchat.DBItf, signingKey string) UsecaseItf {
 	return UseCase{
-		dbRoomRsc: dbRsc,
+		dbRoomRsc:  dbRsc,
 		signingKey: []byte(signingKey),
 	}
 

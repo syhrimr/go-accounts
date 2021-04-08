@@ -1,9 +1,10 @@
 package groupchat
 
 import (
-	"github.com/lolmourne/go-groupchat/model"
 	"log"
 	"strconv"
+
+	"github.com/lolmourne/go-accounts/model"
 )
 
 func (u UseCase) CreateGroupchat(name, adminID, desc, categoryID string) (model.Room, error) {
@@ -11,11 +12,11 @@ func (u UseCase) CreateGroupchat(name, adminID, desc, categoryID string) (model.
 	admin, err := strconv.ParseInt(adminID, 10, 64)
 	if err != nil {
 		log.Println(err)
-		return model.Room{},err
+		return model.Room{}, err
 	}
 
-	room:=u.dbRoomRsc.CreateRoom(name,admin,desc,categoryID)
-	return model.Room{},room
+	room := u.dbRoomRsc.CreateRoom(name, admin, desc, categoryID)
+	return model.Room{}, room
 
 }
 
@@ -24,8 +25,7 @@ func (u UseCase) EditGroupchat(name, desc, categoryID string) (model.Room, error
 }
 
 func (u UseCase) JoinRoom(roomID, userID int64) error {
-	err:=u.dbRoomRsc.AddRoomParticipant(roomID, userID)
+	err := u.dbRoomRsc.AddRoomParticipant(roomID, userID)
 
 	return err
 }
-

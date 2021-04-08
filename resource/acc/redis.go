@@ -8,7 +8,7 @@ import (
 	"log"
 	"time"
 
-	"github.com/lolmourne/go-groupchat/model"
+	"github.com/lolmourne/go-accounts/model"
 )
 
 func (dbr *RedisResource) Register(username string, password string, salt string) error {
@@ -49,4 +49,3 @@ func (dbr *RedisResource) UpdateProfile(userID int64, profilePic string) error {
 func (dbr *RedisResource) UpdateUserPassword(userID int64, password string) error {
 	return dbr.next.UpdateUserPassword(userID, password)
 }
-

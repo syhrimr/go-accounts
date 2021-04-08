@@ -1,7 +1,7 @@
 package userauth
 
 import (
-	"github.com/lolmourne/go-groupchat/resource/acc"
+	"github.com/lolmourne/go-accounts/resource/acc"
 )
 
 type Usecase struct {

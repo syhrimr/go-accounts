@@ -3,7 +3,7 @@ package acc
 import (
 	"github.com/go-redis/redis/v8"
 	"github.com/jmoiron/sqlx"
-	"github.com/lolmourne/go-groupchat/model"
+	"github.com/lolmourne/go-accounts/model"
 )
 
 type RedisResource struct {
@@ -21,7 +21,6 @@ type DBItf interface {
 	GetUserByUserName(userName string) (model.User, error)
 	UpdateProfile(userID int64, profilePic string) error
 	UpdateUserPassword(userID int64, password string) error
-
 }
 
 func NewRedisResource(rdb *redis.Client, next DBItf) DBItf {

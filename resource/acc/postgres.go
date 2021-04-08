@@ -3,7 +3,7 @@ package acc
 import (
 	"time"
 
-	"github.com/lolmourne/go-groupchat/model"
+	"github.com/lolmourne/go-accounts/model"
 )
 
 func (dbr *DBResource) Register(username string, password string, salt string) error {

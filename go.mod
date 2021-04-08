@@ -1,4 +1,4 @@
-module github.com/lolmourne/go-groupchat
+module github.com/lolmourne/go-accounts
 
 go 1.15
 
