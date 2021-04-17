@@ -58,7 +58,7 @@ func main() {
 	r.PUT("/password", validateSession(changePassword))
 	r.GET("/user/info", validateSession(getUserInfo))
 
-	r.Run(":7171")
+	r.Run(":7070")
 }
 
 func validateSession(handlerFunc gin.HandlerFunc) gin.HandlerFunc {

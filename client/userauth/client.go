@@ -12,7 +12,7 @@ func (u *AuthClient) GetUserInfo(accessToken string) *User {
 		Timeout: u.timeout,
 	}
 
-	req, err := http.NewRequest("GET", u.endpoint, nil)
+	req, err := http.NewRequest("GET", u.host+"/user/info", nil)
 	if err != nil {
 		return nil
 	}

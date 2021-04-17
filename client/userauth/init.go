@@ -5,8 +5,8 @@ import (
 )
 
 type AuthClient struct {
-	endpoint string
-	timeout  time.Duration
+	host    string
+	timeout time.Duration
 }
 
 type User struct {
@@ -20,9 +20,9 @@ type ClientItf interface {
 	GetUserInfo(accessToken string) *User
 }
 
-func NewClient(endpoint string, timeout time.Duration) ClientItf {
+func NewClient(host string, timeout time.Duration) ClientItf {
 	return &AuthClient{
-		endpoint: endpoint,
-		timeout:  timeout,
+		host:    host,
+		timeout: timeout,
 	}
 }
