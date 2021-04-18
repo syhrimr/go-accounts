@@ -48,9 +48,14 @@ func (u *Usecase) Login(username, password string) (string, error) {
 	user.Password = ""
 	user.Salt = ""
 
+	if user.ProfilePic == "" {
+		user.ProfilePic = "https://i.imgur.com/cINvch3.png"
+	}
+
 	token := jwt.New(jwt.GetSigningMethod("HS256"))
 	tokenClaim := jwt.MapClaims{}
-	tokenClaim["user"] = user.UserID
+	tokenClaim["user_id"] = user.UserID
+	tokenClaim["profile_pic"] = user.ProfilePic
 	token.Claims = tokenClaim
 
 	tokenString, err := token.SignedString(u.signingKey)
@@ -74,7 +79,7 @@ func (u *Usecase) ValidateSession(accessToken string) (int64, error) {
 		return 0, errors.New("Invalid Token")
 	}
 
-	userID := int64(claims["user"].(float64))
+	userID := int64(claims["user_id"].(float64))
 	return userID, nil
 }
 
