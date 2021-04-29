@@ -19,7 +19,8 @@ type DBItf interface {
 	Register(username string, password string, salt string) error
 	GetUserByUserID(userID int64) (model.User, error)
 	GetUserByUserName(userName string) (model.User, error)
-	UpdateProfile(userID int64, profilePic string) error
+	UpdatePhotoProfile(userID int64, profilePic string) error
+	UpdateUserName(userID int64, username string) error
 	UpdateUserPassword(userID int64, password string) error
 }
 

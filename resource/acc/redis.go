@@ -42,10 +42,14 @@ func (dbr *RedisResource) GetUserByUserName(userName string) (model.User, error)
 	return dbr.next.GetUserByUserName(userName)
 }
 
-func (dbr *RedisResource) UpdateProfile(userID int64, profilePic string) error {
-	return dbr.next.UpdateProfile(userID, profilePic)
+func (dbr *RedisResource) UpdatePhotoProfile(userID int64, profilePic string) error {
+	return dbr.next.UpdatePhotoProfile(userID, profilePic)
 }
 
 func (dbr *RedisResource) UpdateUserPassword(userID int64, password string) error {
 	return dbr.next.UpdateUserPassword(userID, password)
+}
+
+func (dbr *RedisResource) UpdateUserName(userID int64, username string) error {
+	return dbr.next.UpdateUserName(userID, username)
 }
