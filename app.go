@@ -6,6 +6,7 @@ import (
 	"log"
 	"math/rand"
 	"net/http"
+	"strconv"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
@@ -146,7 +147,16 @@ func login(c *gin.Context) {
 }
 
 func getUser(c *gin.Context) {
-	userID := c.GetInt64("uid")
+	userIDStr := c.Param("user_id")
+
+	userID, err := strconv.ParseInt(userIDStr, 10, 64)
+	if err != nil {
+		c.JSON(500, StandardAPIResponse{
+			Err: "Internal Server Error",
+		})
+		return
+	}
+
 	if userID < 1 {
 		c.JSON(401, StandardAPIResponse{
 			Err: "Unauthorized",

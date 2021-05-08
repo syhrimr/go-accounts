@@ -18,6 +18,7 @@ type User struct {
 
 type ClientItf interface {
 	GetUserInfo(accessToken string) *User
+	GetUserByID(userID int64) *User
 }
 
 func NewClient(host string, timeout time.Duration) ClientItf {
