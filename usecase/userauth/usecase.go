@@ -88,9 +88,13 @@ func (u *Usecase) ChangeUsername(userID int64, username string) error {
 	if err != nil {
 		return err
 	}
+	
+	if username == "" {
+		return errors.New("new username cannot be empty")
+	}
 
 	if username == userInfo.Username {
-		return errors.New("new username cannot be the as old one")
+		return errors.New("new username cannot be the same as old one")
 	}
 
 	err = u.dbRsc.UpdateUserName(userID, username)
