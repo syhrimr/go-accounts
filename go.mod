@@ -9,5 +9,6 @@ require (
 	github.com/go-redis/redis/v8 v8.8.0
 	github.com/jmoiron/sqlx v1.3.1
 	github.com/lib/pq v1.10.0
+	github.com/prometheus/client_golang v1.10.0
 	github.com/rs/cors v1.7.0 // indirect
 )

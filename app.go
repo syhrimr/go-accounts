@@ -2,11 +2,13 @@ package main
 
 import (
 	"crypto/sha256"
+	"flag"
 	"fmt"
 	"log"
 	"math/rand"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
@@ -14,12 +16,16 @@ import (
 	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq"
 	"github.com/lolmourne/go-accounts/resource/acc"
+	"github.com/lolmourne/go-accounts/resource/monitoring"
 	"github.com/lolmourne/go-accounts/usecase/userauth"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
 var db *sqlx.DB
 var dbResource acc.DBItf
 var userAuthUsecase userauth.UsecaseItf
+var addr = flag.String("listen-address", ":7171", "The address to listen on for HTTP requests.")
+var prometheusMonitoring monitoring.IMonitoring
 
 func main() {
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
@@ -58,6 +64,13 @@ func main() {
 	r.PUT("/profile", validateSession(updateProfile))
 	r.PUT("/password", validateSession(changePassword))
 	r.GET("/user/info", validateSession(getUserInfo))
+
+	http.Handle("/metrics", promhttp.Handler())
+	go func() {
+		log.Fatal(http.ListenAndServe(*addr, nil))
+	}()
+
+	prometheusMonitoring = monitoring.NewPrometheusMonitoring()
 
 	r.Run(":7070")
 }
@@ -129,18 +142,24 @@ func register(c *gin.Context) {
 }
 
 func login(c *gin.Context) {
+	startTime := time.Now()
 	username := c.Request.FormValue("username")
 	password := c.Request.FormValue("password")
 
 	user, err := userAuthUsecase.Login(username, password)
 	if err != nil {
+		processTime := time.Since(startTime).Milliseconds()
+
+		prometheusMonitoring.CountLogin("/login", 400, err.Error(), float64(processTime))
 		c.JSON(400, StandardAPIResponse{
 			Err:     err.Error(),
 			Message: "Failed",
 		})
+
 		return
 	}
-
+	processTime := time.Since(startTime).Milliseconds()
+	prometheusMonitoring.CountLogin("/login", 200, "nil", float64(processTime))
 	c.JSON(200, StandardAPIResponse{
 		Data: user,
 	})
