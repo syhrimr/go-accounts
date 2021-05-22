@@ -1,0 +1,16 @@
+{
+    "postgresql": {
+        "address": "34.101.216.10",
+        "port": "5432",
+        "db-name": "skilvul-groupchat",
+        "username": "skilvul",
+        "password": "skilvul123apa"
+    },
+    "redis": {
+        "host": "34.101.216.10:6379",
+        "password": "skilvulredis"
+    },
+    "jwt": {
+        "signKey": "signedK3y"
+    }
+}

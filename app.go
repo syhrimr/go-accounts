@@ -1,17 +1,24 @@
 package main
 
 import (
+	"encoding/json"
 	"flag"
+	"fmt"
+	"io/ioutil"
 	"log"
 	"net/http"
+	"os"
 	"strconv"
 	"time"
+
+	_ "net/http/pprof"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/go-redis/redis/v8"
 	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq"
+	"github.com/lolmourne/go-accounts/model"
 	"github.com/lolmourne/go-accounts/resource/acc"
 	"github.com/lolmourne/go-accounts/resource/monitoring"
 	"github.com/lolmourne/go-accounts/usecase/userauth"
@@ -25,15 +32,32 @@ var prometheusMonitoring monitoring.IMonitoring
 
 func main() {
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
-	dbInit, err := sqlx.Connect("postgres", "host=34.101.216.10 user=skilvul password=skilvul123apa dbname=skilvul-groupchat sslmode=disable")
+
+	cfgFile, err := os.Open("config.json")
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer cfgFile.Close()
+
+	cfgByte, _ := ioutil.ReadAll(cfgFile)
+
+	var cfg model.Config
+	err = json.Unmarshal(cfgByte, &cfg)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	dbConStr := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable", cfg.DB.Address, cfg.DB.Port, cfg.DB.User, cfg.DB.Password, cfg.DB.DBName)
+
+	dbInit, err := sqlx.Connect("postgres", dbConStr)
 	if err != nil {
 		log.Fatalln(err)
 	}
 
 	rdb := redis.NewClient(&redis.Options{
-		Addr:     "34.101.216.10:6379",
-		Password: "skilvulredis", // no password set
-		DB:       0,              // use default DB
+		Addr:     cfg.Redis.Host,
+		Password: cfg.Redis.Password, // no password set
+		DB:       0,                  // use default DB
 	})
 
 	dbRsc := acc.NewDBResource(dbInit)
@@ -41,7 +65,7 @@ func main() {
 
 	dbResource = dbRsc
 
-	userAuthUsecase = userauth.NewUsecase(dbRsc, "signedK3y")
+	userAuthUsecase = userauth.NewUsecase(dbRsc, cfg.JWT.SignKey)
 
 	corsOpts := cors.Config{
 		AllowAllOrigins:  true,
@@ -64,6 +88,9 @@ func main() {
 	http.Handle("/metrics", promhttp.Handler())
 	go func() {
 		log.Fatal(http.ListenAndServe(*addr, nil))
+	}()
+	go func() {
+		log.Println(http.ListenAndServe("localhost:6060", nil))
 	}()
 
 	prometheusMonitoring = monitoring.NewPrometheusMonitoring()
