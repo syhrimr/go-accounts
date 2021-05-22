@@ -1,12 +1,7 @@
 package main
 
 import (
-<<<<<<< HEAD
-=======
-	"crypto/sha256"
 	"flag"
-	"fmt"
->>>>>>> fe731cabd36e6cce8226dabb3830c1babdc6b282
 	"log"
 	"net/http"
 	"strconv"
